@@ -28,7 +28,7 @@
 ###############################################################################
 # import textwrap
 
-# check = "After this operation, 1,232 kB of additional disk space will be used."
+# check = "After this operation, 1313 kB of additional disk space will be used."
 # print(check)
 # print(textwrap.fill(check, width=30))
 ###############################################################################
@@ -45,7 +45,7 @@
 
 # def reddit(search):
 #     result = request.urlopen("http://www.reddit.com/r/{}.json".format(search))
-#     result = re.findall(r"(\"title\": \".+\")", str(result.read().decode()))
+#     result = re.findall(r"(\"title\": \".+\")?", result.read().decode())
 #     print(result)
 #     data = lambda : itertools.islice(result, 5)
 #     return data
@@ -68,16 +68,17 @@
 #         return found
 #     else:
 #         return None
+
 def planify(sequence):
-    fixed = []
     def repeat(seq):
         if hasattr(seq, '__iter__') and not isinstance(seq, str):
             for item in seq:
+                print(item)
                 repeat(item)
         else:
-            fixed.append(seq)
-    repeat(sequence)
-    return fixed
+            print(seq)
+            yield seq
+    return list(repeat(sequence))
 
 def planify2(sequence):
     for item in planify(sequence):
