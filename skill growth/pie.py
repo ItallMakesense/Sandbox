@@ -32,6 +32,8 @@
 # print(check)
 # print(textwrap.fill(check, width=30))
 ###############################################################################
+
+###############################################################################
 # import functools
 # import operator
 
@@ -56,40 +58,60 @@
 #     # print(title)
 #     pass
 ###############################################################################
-# def seeker(dictionary, wanted):
-#     if isinstance(dictionary, dict):
-#         if wanted in dictionary.keys():
-#             found = dictionary[wanted]
+# def planify(sequence):
+#     shallow_list = []
+#     def repeat(seq):
+#         if hasattr(seq, '__iter__') and not isinstance(seq, str):
+#             for item in seq:
+#                 repeat(item)
 #         else:
-#             for key in dictionary.keys():
-#                 found = seeker(dictionary[key], wanted)
-#                 if found:
-#                     break
-#         return found
-#     else:
-#         return None
+#             shallow_list.append(seq)
+#     repeat(sequence)
+#     return shallow_list
 
-def planify(sequence):
-    def repeat(seq):
-        if hasattr(seq, '__iter__') and not isinstance(seq, str):
-            for item in seq:
-                print(item)
-                repeat(item)
-        else:
-            print(seq)
-            yield seq
-    return list(repeat(sequence))
+# def planify2(sequence):
+#     for item in planify(sequence):
+#         yield item
 
-def planify2(sequence):
-    for item in planify(sequence):
-        yield item
+# class MyList(list):
+#     def __str__(self):
+#         return "<MyList>"
 
-class MyList(list):
-    def __str__(self):
-        return "<MyList>"
+# seq = ('abc', 3, [8, ('x', 'y'), MyList(range(5)), [100, [99, [98, [97]]]]])
+# print(planify(seq))
+# gen = planify2(seq)
+# print(type(gen))
+# print(list(gen))
+###############################################################################
+# from pydoc import locate
+def izip_repeat(*iters):
+    def extend(seq, max_length):
+        end = len(seq)
+        for i in range(max_length):
+            if i // end:
+                i = i % end
+            yield seq[i]
+    def even_seqs(seq):
+        even_seqs = []
+        max_length = max((len(sel) for sel in seq))
+        for iterable in seq:
+            # orig_type = locate(type(iterable).__name__)
+            if len(iterable) != max_length:
+                even_seqs.append(list(extend(iterable, max_length)))
+            else:
+                even_seqs.append(iterable)
+        return even_seqs
+    return (zipped for zipped in zip(*even_seqs(iters)))
 
-seq = ('abc', 3, [8, ('x', 'y'), MyList(range(5)), [100, [99, [98, [97]]]]])
-print(planify(seq))
-gen = planify2(seq)
-print(type(gen))
-print(list(gen))
+g = izip_repeat('abc', [0, 1])
+print(type(g), list(g))
+
+print(list(izip_repeat([0, 1, 2], 'mn')))
+# [(0, 'm'), (1, 'n'), (2, 'm')]
+print(list(izip_repeat('ABCD', 'xy')))
+# [('A', 'x'), ('B', 'y'), ('C', 'x'), ('D', 'y')]
+print(list(izip_repeat('xy', ['mn', 'op'] , range(5))))
+# [('x', 'mn', 0), ('y', 'op', 1), ('x', 'mn', 2), ('y', 'op', 3), ('x', 'mn', 4)]
+###############################################################################
+
+###############################################################################
