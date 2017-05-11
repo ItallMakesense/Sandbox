@@ -245,15 +245,35 @@
 ###############################################################################
 from flask import Flask, jsonify, request, abort
 import datetime
+import subprocess
+import threading
 
 app = Flask(__name__)
 
 list_of = {"jobs": [], "statuses": [], "results": []}
-# job_id = 0
-# def get_id():
-#     global job_id
-#     job_id += 1
-#     return job_id
+jobs_start_time = {}
+jobs_threads = {}
+
+def execute(command):
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    ex_code = proc.poll()
+    completion_time = datetime.datetime.now()
+    completion_day = datetime.date.today().strftime("%A")
+    list_of["results"].append({
+        "result id": len(list_of["results"]) + 1,
+        "duration": completion_time,
+        "completed": str(completion_time.replace(" ", completion_day[0])),
+        "stdout": stdout.decode(),
+        "stderr": stderr.decode(),
+        "exit code": ex_code
+    })
+    list_of["statuses"][job_id]
+
+def create_thread(job_id):
+    jobs_threads.update((job_id, threading.Thread(target=execute,\
+                        args=(list_of["jobs"][job_id]["command"],))))
+    jobs_threads[job_id].start()
 
 @app.route('/api/jobs', methods=['GET'])
 def get_jobs_list():
@@ -261,17 +281,24 @@ def get_jobs_list():
 
 @app.route('/api/jobs', methods=['POST'])
 def create_job():
+    # l = threading.Lock()
+    # creation_thread = threading.Thread()
+    # creation_thread.
     job_id = len(list_of["jobs"]) + 1
+    command = request.json.get("command")
+    creation_time = datetime.datetime.now()
+    creation_day = datetime.date.today().strftime("%A")
+    jobs_start_time.update((job_id, creation_time))
     list_of["jobs"].append({
         "job_id": job_id,
-        "command": request.json.get("command"),
-        "created": str(datetime.datetime.now()).\
-                   replace(" ", datetime.date.today().strftime("%A")[0])
+        "command": command,
+        "created": str(creation_time.replace(" ", creation_day[0]))
     })
     list_of["statuses"].append({
         "status_id": job_id,
         "done": False
     })
+    create_thread(job_id)
     return "{} {}\n{}".format(request.environ.get('SERVER_PROTOCOL'),\
            "202 Accepted", job_status_url(job_id))
 
