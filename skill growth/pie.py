@@ -254,25 +254,26 @@ list_of = {"jobs": [], "statuses": [], "results": []}
 jobs_start_time = {}
 jobs_threads = {}
 
-def execute(command):
+def execute(command, job_id):
     proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     ex_code = proc.poll()
     completion_time = datetime.datetime.now()
     completion_day = datetime.date.today().strftime("%A")
+    result_id = len(list_of["results"]) + 1
     list_of["results"].append({
-        "result id": len(list_of["results"]) + 1,
+        "result id": result_id,
         "duration": completion_time,
         "completed": str(completion_time.replace(" ", completion_day[0])),
         "stdout": stdout.decode(),
         "stderr": stderr.decode(),
         "exit code": ex_code
     })
-    list_of["statuses"][job_id]
+    list_of["statuses"][job_id]["done"] = True
 
-def create_thread(job_id):
+def job_thread(job_id):
     jobs_threads.update((job_id, threading.Thread(target=execute,\
-                        args=(list_of["jobs"][job_id]["command"],))))
+                        args=(list_of["jobs"][job_id]["command"], job_id))))
     jobs_threads[job_id].start()
 
 @app.route('/api/jobs', methods=['GET'])
@@ -298,7 +299,7 @@ def create_job():
         "status_id": job_id,
         "done": False
     })
-    create_thread(job_id)
+    job_thread(job_id)
     return "{} {}\n{}".format(request.environ.get('SERVER_PROTOCOL'),\
            "202 Accepted", job_status_url(job_id))
 
