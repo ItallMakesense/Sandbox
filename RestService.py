@@ -1,11 +1,55 @@
+# -*- coding: utf-8 -*-
+
+"""
+HTTP REST service for performing shell commands on a Linux host.
+
+Features:
+- Uses only python standard library
+- Returns appropriate HTTP codes for responses
+- At the same time can be executed a few commands
+- Respects Cyrillic alphabet for requests and responses
+
+Examples:
+$: curl -i http://localhost:5000/api/jobs
+(Client receives "OK" response and json-formatted all jobs list)
+
+$: curl -i -X POST -H 'Content-Type: application/json'\
+   -d '{"command": "echo 42"}' http://localhost:5000/api/jobs
+(Client recieves "Accepted" response and job status location in header)
+
+$: curl -i http://localhost:5000/api/jobs/1
+(Client recieves "OK" response, job status location in header and
+ json-formatted job info)
+
+$: curl -i http://localhost:5000/api/statuses
+(Client recieves "OK" response and json-formatted statuses for all jobs)
+
+$: curl -i http://localhost:5000/api/statuses/1
+(If job wasn't completed, client recieves "OK" respose and
+ json-formatted job status. In other case, client recieves "See Other"
+ response and job result loction in header)
+
+$: curl -i http://localhost:5000/api/results
+(Client recieves "OK" response and json-formatted results for all jobs)
+
+$: curl -i http://localhost:5000/api/results
+(Client recieves "OK" response and json-formatted job result)
+"""
+
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from SocketServer import ThreadingMixIn
-import threading
-import subprocess
+from threading import Thread
+import sys
 import re
-import cgi
 import json
+import cgi
 import datetime
+import subprocess
+
+
+# Changing encoding to support
+# cyrillic alphabet for requests and responses
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 
 class Service(object):
@@ -18,18 +62,7 @@ class Service(object):
     statuses = {}
     results = {}
 
-    # job_id = 0
-    # result_id = 0
-    # @classmethod
-    # def get_job_id(self):
-    #     Service.job_id += 1
-    #     return str(Service.job_id)
-    # @classmethod
-    # def get_result_id(self):
-    #     Service.job_id += 1
-    #     return str(Service.job_id)
 
- 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
 
     def spec_response(self, code):
@@ -38,7 +71,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "application/json")
             self.end_headers()
         elif code == 404:
-            self.send_response(404, "Not Found: wrong job id")
+            self.send_response(404, "Not Found: job id don\'t exist")
             self.end_headers()
         elif code == 400:
             self.send_response(400, "Bad Request: enter address properly")
@@ -50,17 +83,17 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         if re.search(r'/api/jobs$', self.path):
             self.spec_response(200)
             self.wfile.write(json.dumps({"jobs": Service.jobs.values()},\
-                                        indent=2))
+                                        indent=2) + "\n")
 ###STATUSES### Sending jobs status list
         elif re.search(r'/api/statuses$', self.path):
             self.spec_response(200)
             self.wfile.write(json.dumps({"statuses": Service.statuses.values()},\
-                                        indent=2))
+                                        indent=2) + "\n")
 ###RESULTS### Sending jobs result list
         elif re.search(r'/api/results$', self.path):
             self.spec_response(200)
             self.wfile.write(json.dumps({"results": Service.results.values()},\
-                                        indent=2))
+                                        indent=2) + "\n")
 ###JOB INFO### Sending information about a job
         elif re.search(r'/api/jobs/[^\D]+', self.path):
             job_id = self.path.split('/')[-1]
@@ -76,48 +109,48 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         else:
             self.spec_response(400)
 
-### Sends information about a job
-    def send_job_info(self, job_id):
+    def send_job_info(self, job_id): ### Sends information about a job
         if job_id in Service.statuses.keys():
             self.send_response(200)
+            self.send_header("Content-Type", "application/json")
             self.send_header("Locaion", "{}/api/statuses/{}\n".format(\
                                             Service.address, job_id))
             self.end_headers()
             self.wfile.write(json.dumps(Service.jobs[job_id],\
-                                    indent=2))
+                                        indent=2) + "\n")
         else:
             self.spec_response(404)
 
-### Sends job execution status
-    def send_status(self, job_id):
+    def send_status(self, job_id): ### Sends job execution status
         if job_id in Service.statuses.keys():
-# If job has completed, sending address for checking job results
+# If job execution has completed,
+# sending redirection address in job results
             if Service.statuses[job_id]["done"]:
                 result_id = Service.statuses[job_id]["result id"]
                 self.send_response(303, "See Other: execution completed")
+                self.send_header("Content-Type", "application/json")
                 self.send_header("Locaion", "{}/api/results/{}\n".format(\
                                             Service.address, result_id))
                 self.end_headers()
 # If job is still executing, sending job status
             else:
                 self.spec_response(200)
-                self.wfile.write(json.dumps(Service.statuses[job_id],\
-                                    indent=2))
+            self.wfile.write(json.dumps(Service.statuses[job_id],\
+                                        indent=2) + "\n")
         else:
             self.spec_response(404)
 
-### Sends job execution result
-    def send_result(self, result_id):
+    def send_result(self, result_id): ### Sends job execution result
         if result_id in Service.results.keys():
             self.spec_response(200)
             self.wfile.write(json.dumps(Service.results[result_id],\
-                                indent=2))
+                                indent=2) + "\n")
         else:
             self.spec_response(404)
 
 ###################### METHOD - POST ######################
     def do_POST(self):
-###CREATE### Posting information of a new job
+###CREATE### Retrieving information about a new job, and creating it
         if re.search(r'/api/jobs$', self.path):
             ctype, pdict = cgi.parse_header(self.headers.getheader("content-type"))
             if ctype == "application/json":
@@ -132,8 +165,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         else:
             self.spec_response(400)
 
-### Creates a new job and executes it in separate thread
-    def create_job(self, content):
+    def create_job(self, content): ### Creates a new job and executes it in separate thread
         creation_time = datetime.datetime.now()
         creation_day = datetime.date.today().strftime("%A")
         job_id = str(len(Service.jobs) + 1)
@@ -147,8 +179,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 # Executing new job
         self.execute_in_thread(job_id, creation_time)
 
-### Adds the job to the status list
-    def add_status(self, job_id):
+    def add_status(self, job_id): ### Adds the job to the status list
         Service.statuses.setdefault(job_id, {
             "status_id": job_id,
             "done": False})
@@ -157,20 +188,23 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                             Service.address, job_id))
         self.end_headers()
 
-### Executes the job in a new thread
-    def execute_in_thread(self, job_id, time):
-        job_thread = threading.Thread(target=self.execute, args=(\
-                        Service.jobs[job_id]["command"], job_id, time))
+    def execute_in_thread(self, job_id, time): ### Executes the job in a new thread
+        job_thread = Thread(target=self.execute, args=(\
+                            Service.jobs[job_id]["command"], job_id, time))
         job_thread.start()
 
-### Executes the job and writes it's result
-    def execute(self, command, job_id, time):
-# Creating subprocess for a job command and executing it
+    def execute(self, command, job_id, time): ### Executes the job and writes it's result
         proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,\
                                 stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate()
         ex_code = proc.poll()
 # Writing a result of job execution
+        result_id = self.add_result(stdout, stderr, ex_code, time)
+# Updating jobs status list
+        Service.statuses[job_id]["done"] = True
+        Service.statuses[job_id].setdefault("result id", result_id)
+
+    def add_result(self, out, err, code, time): ### Writes a result of a job execution
         completion_time = datetime.datetime.now()
         completion_day = datetime.date.today().strftime("%A")
         result_id = str(len(Service.results) + 1)
@@ -179,17 +213,13 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             "result id": result_id,
             "duration": str(completion_time - time),
             "completed": str(completion_time).replace(" ", completion_day[0]),
-            "stdout": stdout.decode(),
-            "stderr": stderr.decode(),
-            "exit code": str(ex_code)})
-# Updating jobs status list
-        Service.statuses[job_id]["done"] = True
-        Service.statuses[job_id].setdefault("result id", result_id)
-
-    def add_result(self, id):
-        pass
+            "stdout": out.decode(),
+            "stderr": err.decode(),
+            "exit code": code })
+        return result_id
 
 class Server(object):
+
     def __init__(self, ip, port):
         self.server = HTTPServer((ip, port), HTTPRequestHandler)
 
@@ -201,9 +231,9 @@ class Server(object):
         try:
             self.server.serve_forever()
         except KeyboardInterrupt:
-            pass
-        print "\nStopping HTTP server at {}".format(Service.address)
-        self.server.server_close()
+            print "\nStopping HTTP server at {}".format(Service.address)
+        finally:
+            self.server.server_close()
  
 if __name__=="__main__":
     server = Server(Service.ip, Service.port)
