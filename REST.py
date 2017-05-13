@@ -40,7 +40,7 @@ def job_thread(job_id, time):
 #   Gets list of existing jobs
 @app.route('/api/jobs', methods=['GET'])
 def get_jobs_list():
-    return jsonify({"jobs": list(list_of["jobs"].values())})
+    return jsonify({"jobs": list_of["jobs"].values()})
 
 #   Creates new job for a command
 @app.route('/api/jobs', methods=['POST'])
@@ -49,7 +49,6 @@ def create_job():
     command = request.json.get("command")
     creation_time = datetime.datetime.now()
     creation_day = datetime.date.today().strftime("%A")
-    jobs_start_time.setdefault(job_id, creation_time)
     list_of["jobs"].setdefault(job_id, {
         "job_id": job_id,
         "command": command,
@@ -68,13 +67,13 @@ def create_job():
 #   Gets url for checking job status
 @app.route('/api/jobs/<job_id>', methods=['GET'])
 def job_status_url(job_id):
-    if int(job_id) in range(1, len(list_of["statuses"]) + 1):
+    if job_id in list_of["statuses"].keys():
         return "Location: {}/api/statuses/{}\n".format(address, job_id)
     else:
         return "{} {}".format(request.environ.get('SERVER_PROTOCOL'),\
                 "404 Not Found")
 
-#   Removes job from the history
+#  Removes job from the history
 @app.route('/api/jobs/<job_id>', methods=['DELETE'])
 def remove_job():
     pass
@@ -83,12 +82,12 @@ def remove_job():
 #   Gets execution statuses of jobs
 @app.route('/api/statuses', methods=['GET'])
 def all_jobs_statuses():
-    return jsonify({"statuses": list(list_of["statuses"].values())})
+    return jsonify({"statuses": list_of["statuses"].values()})
 
 #   Gets execution status of requested job
 @app.route('/api/statuses/<job_id>', methods=['GET'])
 def job_status(job_id):
-    if int(job_id) in range(1, len(list_of["statuses"]) + 1):
+    if job_id in list_of["statuses"].keys():
         if list_of["statuses"][job_id]["done"]:
             return "{} {}\nLocation: {}\n".format(\
                     request.environ.get('SERVER_PROTOCOL'), "303 See Other",\
@@ -104,14 +103,12 @@ def job_status(job_id):
 #   Gets list of completed job results
 @app.route('/api/results', methods=['GET'])
 def all_jobs_results():
-    print(list_of["results"])
-    return jsonify({"results": list(list_of["results"].values())})
+    return jsonify({"results": list_of["results"].values()})
 
 #   Gets job result provided after completion of a job
 @app.route('/api/results/<result_id>', methods=['GET'])
 def job_result(result_id):
-    if int(result_id) in range(1, len(list_of["results"]) + 1):
-        print(list_of["results"][result_id])
+    if job_id in list_of["results"].keys():
         return "{} {}\n{}".format(request.environ.get('SERVER_PROTOCOL'),\
                 "200 Ok", list_of["results"][result_id])
 
