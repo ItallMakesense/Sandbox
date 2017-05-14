@@ -109,18 +109,21 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 # Searching matches with existing major endpoints
         for rgx, res in self.tree.iteritems():
             if re.search(rgx, self.path):
+                content = json.dumps({res[0]: res[1]}, indent=2)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", len(content))
                 self.end_headers()
-                self.wfile.write(json.dumps({res[0]: res[1]},\
-                                            indent=2) + "\n")
+                self.wfile.write(content)
                 send = True
+                return
 # Searching matches with existing id-specified endpoints
         for rgx, res in self.branches.iteritems():
             if re.search(rgx, self.path):
                 branch_id = self.path.split('/')[-1]
                 self.branch_response(res, branch_id)
                 send = True
+                return
 # No matces with existing endpoints - bad request
         if not send:
             self.send_response(400, "Bad Request: enter address properly")
@@ -129,34 +132,37 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     def branch_response(self, branch, branch_id):
         if branch_id in branch[1].iterkeys():
 # Sending header of request
-            branch[2](branch_id)
+            content = json.dumps(branch[1][branch_id], indent=2)
+            branch[2](len(content), branch_id)
             self.end_headers()
 # Sending json-formatted endpoint data
-            self.wfile.write(json.dumps(branch[1][branch_id],\
-                                        indent=2) + "\n")
+            self.wfile.write(content)
         else:
             self.send_response(404, "Not Found: job with such id don\'t exist")
             self.end_headers()
 
-    def send_job_info(self, job_id): ### Sends job endpoint header
+    def send_job_info(self, length, job_id): ### Sends job endpoint header
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", length)
             self.send_header("Locaion", "{}/api/statuses/{}".format(\
                                             Service.address, job_id))
 
-    def send_status(self, job_id): ### Sends status endpoint header
+    def send_status(self, length, job_id): ### Sends status endpoint header
 # If job is done, includes redirection link
         if Service.statuses[job_id]["status"] in ("executing", "deleted"):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", length)
         elif Service.statuses[job_id]["status"] == "done":
             result_id = Service.statuses[job_id]["result id"]
             self.send_response(303, "See Other: execution had completed")
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", length)
             self.send_header("Locaion", "{}/api/results/{}".format(\
                                         Service.address, result_id))
 
-    def send_result(self, result_id): ### Sends result endpoint header
+    def send_result(self, length, result_id): ### Sends result endpoint header
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
 
