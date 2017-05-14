@@ -17,7 +17,7 @@ Features:
 
 Examples:
 $: curl -i http://localhost:5000/api/jobs
-(Client receives "OK" response and json-formatted all jobs list)
+(Client receives "OK" response and json-formatted list of all jobs)
 
 $: curl -i -X POST -H 'Content-Type: application/json'\
    -d '{"command": "echo 42"}' http://localhost:5000/api/jobs
@@ -28,15 +28,15 @@ $: curl -i http://localhost:5000/api/jobs/1
  json-formatted job info)
 
 $: curl -i http://localhost:5000/api/statuses
-(Client recieves "OK" response and json-formatted statuses for all jobs)
+(Client recieves "OK" response and json-formatted statuses of all jobs)
 
 $: curl -i http://localhost:5000/api/statuses/1
 (If job wasn't completed, client recieves "OK" respose and
  json-formatted job status. In other case, client recieves "See Other"
- response and job result loction in header)
+ response and job result location in header)
 
 $: curl -i http://localhost:5000/api/results
-(Client recieves "OK" response and json-formatted results for all jobs)
+(Client recieves "OK" response and json-formatted results of all jobs)
 
 $: curl -i http://localhost:5000/api/results/1
 (Client recieves "OK" response and json-formatted job result)
@@ -98,7 +98,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         }
         self.branches = {
         r'/api/jobs/[^\D]+': ("status id", Service.jobs, self.send_job_info),
-        r'/api/statuses/[^\D]+':("status", Service.statuses, self.send_status),
+        r'/api/statuses/[^\D]+':("statuses", Service.statuses, self.send_status),
         r'/api/results/[^\D]+': ("result id", Service.results, self.send_result)
         }
         return BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
@@ -168,17 +168,21 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 length = int(self.headers.getheader("content-length"))
                 content = json.loads(self.rfile.read(length))
 # Creating job
-                job_id, time = self.create_job(content)
+                try:
+                    job_id, time = self.create_job(content)
+                except:
+                    self.send_response(400, "Bad Request: did you use \"command\" key?")
+                    self.end_headers()
+                else:
 # Adding to the jobs status list
-                self.add_status(job_id)
+                    self.add_status(job_id)
 # Sending resonse header
-                self.send_response(202)
-                self.send_header("Locaion", "{}/api/statuses/{}".format(\
-                                    Service.address, job_id))
-                self.end_headers()
-
+                    self.send_response(202)
+                    self.send_header("Locaion", "{}/api/statuses/{}".format(\
+                                        Service.address, job_id))
+                    self.end_headers()
 # Executing new job
-                self.execute_in_thread(job_id, time)
+                    self.execute_in_thread(job_id, time)
             else:
                 self.send_response(415)
                 self.end_headers()
@@ -238,7 +242,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         proper = False
         for rgx, res in self.branches.iteritems():
 # Secure statuses form deletion
-            if re.search(rgx, self.path) and res[0] == "status":
+            if re.search(rgx, self.path) and res[0] == "statuses":
                 proper = True
                 self.send_response(403)
                 self.end_headers()
