@@ -32,7 +32,7 @@ $: curl -i http://localhost:5000/api/statuses/1
 $: curl -i http://localhost:5000/api/results
 (Client recieves "OK" response and json-formatted results for all jobs)
 
-$: curl -i http://localhost:5000/api/results
+$: curl -i http://localhost:5000/api/results/1
 (Client recieves "OK" response and json-formatted job result)
 """
 
@@ -65,6 +65,19 @@ class Service(object):
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
 
+    def __init__(self, *args, **kwargs):
+        self.tree = {
+        r'/api/jobs$': ("jobs", Service.jobs.values()),
+        r'/api/statuses$': ("statuses", Service.statuses.values()),
+        r'/api/results$': ("results", Service.results.values())
+        }
+        self.branches = {
+        r'/api/jobs/[^\D]+': ("job", Service.jobs, self.send_job_info),
+        r'/api/statuses/[^\D]+':("status", Service.statuses, self.send_status),
+        r'/api/results/[^\D]+': ("result", Service.results, self.send_result)
+        }
+        return BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
+    
     def spec_response(self, code):
         if code == 200:
             self.send_response(200)
@@ -79,74 +92,62 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
 ###################### METHOD - GET ######################
     def do_GET(self):
-###JOBS### Sending jobs list
-        if re.search(r'/api/jobs$', self.path):
-            self.spec_response(200)
-            self.wfile.write(json.dumps({"jobs": Service.jobs.values()},\
-                                        indent=2) + "\n")
-###STATUSES### Sending jobs status list
-        elif re.search(r'/api/statuses$', self.path):
-            self.spec_response(200)
-            self.wfile.write(json.dumps({"statuses": Service.statuses.values()},\
-                                        indent=2) + "\n")
-###RESULTS### Sending jobs result list
-        elif re.search(r'/api/results$', self.path):
-            self.spec_response(200)
-            self.wfile.write(json.dumps({"results": Service.results.values()},\
-                                        indent=2) + "\n")
-###JOB INFO### Sending information about a job
-        elif re.search(r'/api/jobs/[^\D]+', self.path):
-            job_id = self.path.split('/')[-1]
-            self.send_job_info(job_id)
-###STATUS### Sending job execution status
-        elif re.search(r'/api/statuses/[^\D]+', self.path):
-            job_id = self.path.split('/')[-1]
-            self.send_status(job_id)
-###RESULT### Sending job execution result
-        elif re.search(r'/api/results/[^\D]+', self.path):
-            result_id = self.path.split('/')[-1]
-            self.send_result(result_id)
-        else:
-            self.spec_response(400)
+        send = False
+        while not send:
+# Searching matches with existing major endpoints
+            for rgx, res in self.tree.items():
+                if re.search(rgx, self.path):
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({res[0]: res[1]},\
+                                                indent=2) + "\n")
+                    send = True
+# Searching matches with existing id-specified endpoints
+            for rgx, res in self.branches.items():
+                if re.search(rgx, self.path):
+                    branch_id = self.path.split('/')[-1]
+                    self.branch_response(res, branch_id)
+                    send = True
+# No matces with existing endpoints - bad request
+            if not send:
+                self.send_response(400, "Bad Request: enter address properly")
+                self.end_headers()
+                break
 
-    def send_job_info(self, job_id): ### Sends information about a job
-        if job_id in Service.statuses.keys():
+    def branch_response(self, branch, branch_id):
+        if branch_id in branch[1].keys():
+# Sending header of request
+            branch[2](branch_id)
+            self.end_headers()
+# Sending json-formatted endpoint data
+            self.wfile.write(json.dumps(branch[1][branch_id],\
+                                        indent=2) + "\n")
+        else:
+            self.send_response(404, "Not Found: job id don\'t exist")
+            self.end_headers()
+
+    def send_job_info(self, job_id): ### Sends job endpoint header
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Locaion", "{}/api/statuses/{}\n".format(\
+            self.send_header("Locaion", "{}/api/statuses/{}".format(\
                                             Service.address, job_id))
-            self.end_headers()
-            self.wfile.write(json.dumps(Service.jobs[job_id],\
-                                        indent=2) + "\n")
-        else:
-            self.spec_response(404)
 
-    def send_status(self, job_id): ### Sends job execution status
-        if job_id in Service.statuses.keys():
-# If job execution has completed,
-# sending redirection address in job results
+    def send_status(self, job_id): ### Sends status endpoint header
+# If job is done, includes redirection link
             if Service.statuses[job_id]["done"]:
                 result_id = Service.statuses[job_id]["result id"]
                 self.send_response(303, "See Other: execution completed")
                 self.send_header("Content-Type", "application/json")
-                self.send_header("Locaion", "{}/api/results/{}\n".format(\
+                self.send_header("Locaion", "{}/api/results/{}".format(\
                                             Service.address, result_id))
-                self.end_headers()
-# If job is still executing, sending job status
             else:
-                self.spec_response(200)
-            self.wfile.write(json.dumps(Service.statuses[job_id],\
-                                        indent=2) + "\n")
-        else:
-            self.spec_response(404)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
 
-    def send_result(self, result_id): ### Sends job execution result
-        if result_id in Service.results.keys():
-            self.spec_response(200)
-            self.wfile.write(json.dumps(Service.results[result_id],\
-                                indent=2) + "\n")
-        else:
-            self.spec_response(404)
+    def send_result(self, result_id): ### Sends result endpoint header
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
 
 ###################### METHOD - POST ######################
     def do_POST(self):
@@ -158,35 +159,39 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 length = int(self.headers.getheader("content-length"))
                 content = json.loads(self.rfile.read(length))
 # Creating job
-                self.create_job(content)
+                job_id, time = self.create_job(content)
+# Adding to the jobs status list
+                self.add_status(job_id)
+# Sending resonse header
+                self.send_response(202)
+                self.send_header("Locaion", "{}/api/statuses/{}".format(\
+                    Service.address, job_id))
+                self.end_headers()
+# Executing new job
+                self.execute_in_thread(job_id, time)
             else:
                 self.send_response(415)
                 self.end_headers()
         else:
-            self.spec_response(400)
+            self.send_response(400, "Bad Request: enter address properly")
+            self.end_headers()
 
     def create_job(self, content): ### Creates a new job and executes it in separate thread
         creation_time = datetime.datetime.now()
         creation_day = datetime.date.today().strftime("%A")
         job_id = str(len(Service.jobs) + 1)
-# Adding to the jobs list
         Service.jobs.setdefault(job_id, {
             "job_id": job_id,
             "command": content["command"],
-            "created": str(creation_time).replace(" ", creation_day[0])})
-# Adding to the jobs status list
-        self.add_status(job_id)
-# Executing new job
-        self.execute_in_thread(job_id, creation_time)
+            "created": str(creation_time).replace(" ", creation_day[0])
+            })
+        return (job_id, creation_time)
 
     def add_status(self, job_id): ### Adds the job to the status list
         Service.statuses.setdefault(job_id, {
             "status_id": job_id,
-            "done": False})
-        self.send_response(202)
-        self.send_header("Locaion", "{}/api/statuses/{}\n".format(\
-                            Service.address, job_id))
-        self.end_headers()
+            "done": False
+            })
 
     def execute_in_thread(self, job_id, time): ### Executes the job in a new thread
         job_thread = Thread(target=self.execute, args=(\
