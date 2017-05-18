@@ -1,12 +1,11 @@
 from collections import Counter
 import multiprocessing
 import os
+import time
 
-
-occurs = Counter()
 
 def among(name, patterns):
-    """ Makes sense of constructions like *his or thi*.
+    """ Filter constructions like *his or thi*.
     """
     match = False
     for pattern in patterns:
@@ -22,42 +21,38 @@ def among(name, patterns):
             return match
     return match
 
-def multi_counter(file, ignored, min_len):
-    with open(file, encoding="utf8") as o_file:
+def multi_counter(ns, file, ignored, min_len):
+    counter = ns.occurs
+    with open(file) as o_file:
         try:
             content = (word for word in o_file.read().split()\
                         if not among(word, ignored)\
                         and len(word) >= min_len)
-            occurs.update(Counter(content))
+            counter.update(Counter(content))
+            ns.occurs = counter
         except UnicodeError as error:
             print("{} - Unsupported text file. Error message:\n{}".format(\
                     file, error))
 
 def words_counter(path, glob_patterns, ignored_words, min_word_len):
-    files_paths = []
-    for entry in os.scandir(path):
-        if entry.is_file() and among(entry.name, glob_patterns):
-            files_paths.append(entry.path)
-    print(files_paths)
+    manager = multiprocessing.Manager()
+    namespace = manager.Namespace()
+    namespace.occurs = Counter()
+    files_paths = (entry.path for entry in os.scandir(path)\
+                    if entry.is_file() and among(entry.name, glob_patterns))
     for file in files_paths:
-        # mproc = multiprocessing.Process(target=multi_counter,\
-        #         args=(file, ignored_words, min_word_len))
-        # mproc.start()
-        multi_counter(file, ignored_words, min_word_len)
-    return dict(occurs)
+        mproc = multiprocessing.Process(target=multi_counter,\
+                args=(namespace, file, ignored_words, min_word_len))
+        mproc.start()
+        mproc.join()
+    return namespace.occurs
 
-words = words_counter(
-    path='D:/ProcessExplorer',
-    # path='/usr/bin',
-    glob_patterns=('py*', '*.txt'),
-    ignored_words=('import', 'from', 'def*', 'con*', '*if'),
-    min_word_len=3
-    )
-for n, k in enumerate(sorted(words)):
-    try:
-        print(k)
-        print(n)
-    except:
-        print("__________________________________________")
-        print(n)
-        continue
+
+if __name__ == "__main__":
+    words = words_counter(
+        path='/usr/bin',
+        glob_patterns=('py*', '*.txt'),
+        ignored_words=('import', 'from', 'def*', 'con*', '*if'),
+        min_word_len=3
+        )
+    print(words)
