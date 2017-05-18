@@ -23,7 +23,7 @@ def among(name, patterns):
     return match
 
 def multi_counter(file, ignored, min_len):
-    with open(file) as o_file:
+    with open(file, encoding="utf8") as o_file:
         try:
             content = (word for word in o_file.read().split()\
                         if not among(word, ignored)\
@@ -38,6 +38,7 @@ def words_counter(path, glob_patterns, ignored_words, min_word_len):
     for entry in os.scandir(path):
         if entry.is_file() and among(entry.name, glob_patterns):
             files_paths.append(entry.path)
+    print(files_paths)
     for file in files_paths:
         # mproc = multiprocessing.Process(target=multi_counter,\
         #         args=(file, ignored_words, min_word_len))
@@ -46,9 +47,17 @@ def words_counter(path, glob_patterns, ignored_words, min_word_len):
     return dict(occurs)
 
 words = words_counter(
-    path='/usr/bin',
-    glob_patterns=('py*', ),
+    path='D:/ProcessExplorer',
+    # path='/usr/bin',
+    glob_patterns=('py*', '*.txt'),
     ignored_words=('import', 'from', 'def*', 'con*', '*if'),
     min_word_len=3
     )
-print(words)
+for n, k in enumerate(sorted(words)):
+    try:
+        print(k)
+        print(n)
+    except:
+        print("__________________________________________")
+        print(n)
+        continue
