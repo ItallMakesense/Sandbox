@@ -1,3 +1,7 @@
+"""
+This script counts occurrence of words in text files in specified path,
+using multiprocessing module.
+"""
 from collections import Counter
 import multiprocessing
 import os
@@ -5,7 +9,8 @@ import time
 
 
 def among(name, patterns):
-    """ Filter constructions like *his or thi*.
+    """
+    Filter constructions like *his or thi*.
     """
     match = False
     for pattern in patterns:
@@ -19,9 +24,13 @@ def among(name, patterns):
             match = True
         if match:
             return match
-    return match
 
 def multi_counter(ns, file, ignored, min_len):
+    """
+    Opens file and counts an amount of each word occuring
+    in it. In the end updates common counter for all of parallel
+    processes. Raises an error, if file includes undecodable symbols.
+    """
     counter = ns.occurs
     with open(file) as o_file:
         try:
@@ -35,6 +44,13 @@ def multi_counter(ns, file, ignored, min_len):
                     file, error))
 
 def words_counter(path, glob_patterns, ignored_words, min_word_len):
+    """
+    Main function for counting word occurances.
+    Creates generator list of needed files files_paths
+    and using multiprocessing for count words in each file
+    in a separate process. Waits for one process' end to start another.
+    Returns Counter() object.
+    """
     manager = multiprocessing.Manager()
     namespace = manager.Namespace()
     namespace.occurs = Counter()
@@ -55,4 +71,5 @@ if __name__ == "__main__":
         ignored_words=('import', 'from', 'def*', 'con*', '*if'),
         min_word_len=3
         )
-    print(words)
+    for word, count in words.most_common(50):
+        print("{} - {}".format(word, count))
