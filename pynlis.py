@@ -8,6 +8,7 @@ It has a few options implemented:
 
 -R -- recursive search
 -n -- print the number of found line
+-l -- length of the resulting line (100 chars by default)
 -p -- number of processes (by default number of cores)
 Usage example:
 
