@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-#^
 
 """
 PyNLiS - Python Newbie Linux Search - is a minor analog of Linux grep, that uses

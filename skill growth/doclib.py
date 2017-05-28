@@ -1,33 +1,24 @@
-import inspect
+"""
+Non-data descriptor, which can provide class-level and
+instance-level documentation about user methods and attributes.
 
+See module usage in descr_use_2.py
+"""
 
 class DocAPI(object):
 
-    def __init__(self):
-        self.docstring = ""
-
-    def api(self, obj):
-        attrs = list(filter(lambda a: not a.startswith('_'), dir(obj)))
-        print("In API:", attrs)
-        for attr in attrs:
-            if inspect.ismethod(getattr(obj, attr)):
-                print("%s : %s\n" % (attr, eval('obj.{}.__doc__'.format(attr))))
-                self.docstring += "%s : %s\n" % (attr, eval('obj.{}.__doc__'.format(attr)))
-            else:
-                print("%s : %s\n" % (attr, eval('obj.{}'.format(attr))))
-                self.docstring += "%s : %s\n" % (attr, eval('obj.{}'.format(attr)))
-        # return dict(zip(attrs, (eval('obj.%s' % attr) for attr in attrs)))
-        # return {"meth" : eval('obj.meth')}
-        # p = eval('obj.%s' % list(attrs)[0])
-        # return p
-
     def __get__(self, obj, obj_type):
-        print("In GET:", obj, obj_type)
-        if not obj:
-            self.api(obj_type)
-            # return obj_type.meth.__doc__
-            return self.docstring
+        filter_func = lambda attr: not attr.startswith('__')
+        out_line = {}
+        if obj:
+            ns = set(filter(filter_func, dir(obj_type) + dir(obj)))
         else:
-            self.api(obj)
-            # return self.api(obj)
-            return self.docstring
+            ns = filter(filter_func, obj_type.__dict__)
+            obj = obj_type
+        for attr in ns:
+            value = getattr(obj, attr)
+            if callable(value):
+                value = value.__doc__
+            out_line.update({attr : str(value)})
+        listed_line = (" : ".join(items) for items in out_line.items())
+        return "\n".join(listed_line)

@@ -1,3 +1,4 @@
+#! /usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 """
@@ -16,35 +17,35 @@ Features:
 * - DELETE method works on "jobs" and "results" entries
 
 Examples:
-$: curl -i http://localhost:5000/api/jobs
+$: curl -i http://0.0.0.0:5000/api/jobs
 (Client receives "OK" response and json-formatted list of all jobs)
 
 $: curl -i -X POST -H 'Content-Type: application/json'\
-   -d '{"command": "echo 42"}' http://localhost:5000/api/jobs
+   -d '{"command": "echo 42"}' http://0.0.0.0:5000/api/jobs
 (Client recieves "Accepted" response and job status location in header)
 
-$: curl -i http://localhost:5000/api/jobs/1
+$: curl -i http://0.0.0.0:5000/api/jobs/1
 (Client recieves "OK" response, job status location in header and
  json-formatted job info)
 
-$: curl -i http://localhost:5000/api/statuses
+$: curl -i http://0.0.0.0:5000/api/statuses
 (Client recieves "OK" response and json-formatted statuses of all jobs)
 
-$: curl -i http://localhost:5000/api/statuses/1
+$: curl -i http://0.0.0.0:5000/api/statuses/1
 (If job wasn't completed, client recieves "OK" respose and
  json-formatted job status. In other case, client recieves "See Other"
  response and job result location in header)
 
-$: curl -i http://localhost:5000/api/results
+$: curl -i http://0.0.0.0:5000/api/results
 (Client recieves "OK" response and json-formatted results of all jobs)
 
-$: curl -i http://localhost:5000/api/results/1
+$: curl -i http://0.0.0.0:5000/api/results/1
 (Client recieves "OK" response and json-formatted job result)
 
-$: curl -i -X DELETE http://localhost:5000/api/results/1
+$: curl -i -X DELETE http://0.0.0.0:5000/api/results/1
 (Client recieves "OK" response after successful deletion of a result from list)
 
-$: curl -i -X DELETE http://localhost:5000/api/jobs/1
+$: curl -i -X DELETE http://0.0.0.0:5000/api/jobs/1
 (Client recieves "OK" response after successful deletion of a job from list)
 """
 
@@ -66,7 +67,7 @@ sys.setdefaultencoding('utf-8')
 
 class Service(object):
 
-    ip = "localhost"
+    ip = "0.0.0.0"
     port = 5000
     address = ""
 
@@ -302,7 +303,7 @@ class Server(object):
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='HTTP REST Server')
     parser.add_argument('ip', default=Service.ip, nargs='?',\
-                        help='HTTP Server IP (127.0.0.1 by default)')
+                        help='HTTP Server IP (0.0.0.0 by default)')
     parser.add_argument('port',type=int, default=Service.port, nargs='?',\
                         help='Port for HTTP Server (5000 by default)')
     args = parser.parse_args()
