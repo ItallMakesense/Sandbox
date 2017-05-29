@@ -2,7 +2,7 @@
 Non-data descriptor, which can provide class-level and
 instance-level documentation about user methods and attributes.
 
-See module usage in descr_use_2.py
+See module usage in descr_2.py
 """
 
 class DocAPI(object):

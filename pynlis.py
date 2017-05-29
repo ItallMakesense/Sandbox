@@ -3,12 +3,14 @@
 """
 PyNLiS - Python Newbie Linux Search - is a minor analog of Linux grep, that uses
 multiprocessing for performing parallel search.
+
 It has a few options implemented:
 
 -R -- recursive search
 -n -- print the number of found line
 -l -- length of the resulting line (100 chars by default)
 -p -- number of processes (by default number of cores)
+
 Usage example:
 
 $ pynlis.py -R -n 'user' /etc
@@ -23,6 +25,8 @@ import os
 
 
 def pathfinder(path, recursive):
+    """Returns a generator, that contains all files in the given path
+    (including files in subdirectories, if recursive is True)."""
     if recursive:
         handler = lambda e: print("%s - %s" % (e.strerror, e.filename), file=stderr)
         walk_paths = os.walk(path, onerror=handler)
@@ -32,6 +36,10 @@ def pathfinder(path, recursive):
         return (entry.path for entry in os.scandir(path) if entry.is_file())
 
 def searcher(file, word, print_num, line_length, endings="..."):
+    """Opens given file and prints the result (of given length), if
+    given word was found in any of file's line (also prints that line's
+    number, if print_num is True).
+       Search result's endings can be changed."""
     with open(file) as o_file:
         for num, line in enumerate(o_file, 1):
             if word in line:
@@ -47,10 +55,13 @@ def searcher(file, word, print_num, line_length, endings="..."):
                     print("%s : {}%s{}".format(endings, endings)\
                             % (file, "".join((l_chunk, word, r_chunk))))
 
-def initiate_search(path, word, recursive, print_num, line_len, proc_num):
+def begin_search(path, word, recursive, print_num, line_len, proc_num):
+    """Creates a pool of processes to search given word in the found files
+    of given path (including subdirectories, if recursive is True) per one
+    process."""
     pool = multiprocessing.Pool(processes=proc_num)
     for file in pathfinder(path, recursive):
-        pool.apply_async(searcher, [file, word, print_num, line_len])
+        pool.apply_async(func=searcher, args=(file, word, print_num, line_len))
 
 
 if __name__ == "__main__":
@@ -69,5 +80,5 @@ if __name__ == "__main__":
                         help='directory, where to search')
     args = parser.parse_args()
 
-    initiate_search(path=args.dir, word=args.word, recursive=args.rec,\
+    begin_search(path=args.dir, word=args.word, recursive=args.rec,\
                         print_num=args.num, line_len=args.len, proc_num=args.proc)

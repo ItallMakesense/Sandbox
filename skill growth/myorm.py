@@ -1,9 +1,19 @@
 """
-For descr_1.py.
+For descr_3.py.
 """
 
 from datetime import datetime
 import re
+
+
+class Model(object):
+
+    def save(self):
+        filter_func = lambda attr: not attr.startswith('__')
+        class_names = filter(filter_func, self.__class__.__dict__)
+        namespace = filter(filter_func, dir(self))
+        print([self.__class__.__dict__[name] for name in class_names])
+        print([getattr(self, attr) for attr in namespace])
 
 
 class NameField(object):
@@ -20,6 +30,9 @@ class NameField(object):
         else:
             raise TypeError("Name must be str type")
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class BirthdayField(object):
 
@@ -34,6 +47,9 @@ class BirthdayField(object):
             self._bday = date
         else:
             raise TypeError("Birthday must be datetime type")
+
+    def __repr__(self):
+        return self.__class__.__name__
 
 
 class PhoneField(object):
@@ -51,3 +67,6 @@ class PhoneField(object):
             self._phone = phone
         else:
             raise ValueError("Phone must be in format XXX XX XXXXXXX")
+
+    def __repr__(self):
+        return self.__class__.__name__
