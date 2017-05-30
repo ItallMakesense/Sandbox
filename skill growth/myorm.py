@@ -3,17 +3,26 @@ For descr_3.py.
 """
 
 from datetime import datetime
+import sqlite3
 import re
 
 
 class Model(object):
 
+    def data_convert(self, namespace, values):
+        columns = [name + " text" for name in namespace]
+        print(" ".join(columns))
+        db = sqlite3.connect("orm.db")
+        gate = db.cursor()
+        gate.execute("create table Persons (%s)" % " ".join(columns))
+
     def save(self):
-        filter_func = lambda attr: not attr.startswith('__')
-        class_names = filter(filter_func, self.__class__.__dict__)
-        namespace = filter(filter_func, dir(self))
-        print([self.__class__.__dict__[name] for name in class_names])
-        print([getattr(self, attr) for attr in namespace])
+        filter_func = lambda attr: True if not attr.startswith('__') and\
+                                   not callable(getattr(self, attr)) else False
+        namespace = list(filter(filter_func, dir(self)))
+        print(namespace)
+        values = [getattr(self, attr) for attr in namespace]
+        self.data_convert(namespace, values)
 
 
 class NameField(object):
@@ -30,9 +39,6 @@ class NameField(object):
         else:
             raise TypeError("Name must be str type")
 
-    def __repr__(self):
-        return self.__class__.__name__
-
 
 class BirthdayField(object):
 
@@ -47,9 +53,6 @@ class BirthdayField(object):
             self._bday = date
         else:
             raise TypeError("Birthday must be datetime type")
-
-    def __repr__(self):
-        return self.__class__.__name__
 
 
 class PhoneField(object):
@@ -67,6 +70,3 @@ class PhoneField(object):
             self._phone = phone
         else:
             raise ValueError("Phone must be in format XXX XX XXXXXXX")
-
-    def __repr__(self):
-        return self.__class__.__name__
