@@ -5,27 +5,52 @@ For descr_3.py.
 from datetime import datetime
 import sqlite3
 import re
+import peewee
 
 
 class Model(object):
 
-    def data_convert(self, namespace):
-        column_types = ",".join(["%s text" % name for name in namespace])
+    def write(self, namespace, prim_key):
+        table_name = self.__class__.__name__
+        obj_inx = table_name + str(self.__class__._count)
+        # column_types = ",".join(["%s text" % name for name in namespace])
+        columns = []
+        for name in namespace:
+            if name == prim_key:
+                columns.append("%s text primary key" % name)
+                continue
+            columns.append("%s text" % name)
+        column_types = ",".join(columns)
         column_names = ",".join(namespace)
         column_values = [str(getattr(self, attr)) for attr in namespace]
+        print(namespace)
+        print(column_values)
         db = sqlite3.connect("orm.db")
         gate = db.cursor()
-        gate.execute("create table if not exists Persons (%s)" % column_types)
-        gate.execute("insert into Persons ({}) values (?,?,?)".format(column_names), column_values)
+        gate.execute("create table if not exists {} ({})".format(table_name, column_types))
+        update_values = ",".join(["%s=\"%s\"" % pair for pair in zip(namespace, column_values)])
+        gate.execute("insert or replace into {} ({}) values (?,?,?)".format(\
+                        table_name, column_names), column_values)
         db.commit()
-        print([line for line in gate.execute("Select * from Persons")])
+        print([line for line in gate.execute("select * from %s" % table_name)])
         db.close()
 
-    def save(self):
-        filter_func = lambda attr: True if not attr.startswith('__') and\
-                                   not callable(getattr(self, attr)) else False
-        namespace = list(filter(filter_func, dir(self)))
-        self.data_convert(namespace)
+    def save(self, prim_key):
+        filter_func = lambda attr: True if not attr.startswith('_') and\
+                                   not callable(getattr(self, attr))\
+                                   else False
+        namespace = list(filter(filter_func, self.__dict__))
+        self.write(namespace, prim_key)
+
+    def __getattribute__(self, name):
+        if name.startswith("__") or name == "save":
+            return super().__getattribute__(name)
+        else:
+            obj = self
+            obj_type = type(self)
+            self = obj.__dict__[name]
+            print(obj, obj_type, self)
+            return self.__get__(obj, obj_type)
 
 
 class NameField(object):
