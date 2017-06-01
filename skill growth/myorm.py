@@ -9,20 +9,23 @@ import re
 
 class Model(object):
 
-    def data_convert(self, namespace, values):
-        columns = [name + " text" for name in namespace]
-        print(" ".join(columns))
+    def data_convert(self, namespace):
+        column_types = ",".join(["%s text" % name for name in namespace])
+        column_names = ",".join(namespace)
+        column_values = [str(getattr(self, attr)) for attr in namespace]
         db = sqlite3.connect("orm.db")
         gate = db.cursor()
-        gate.execute("create table Persons (%s)" % " ".join(columns))
+        gate.execute("create table if not exists Persons (%s)" % column_types)
+        gate.execute("insert into Persons ({}) values (?,?,?)".format(column_names), column_values)
+        db.commit()
+        print([line for line in gate.execute("Select * from Persons")])
+        db.close()
 
     def save(self):
         filter_func = lambda attr: True if not attr.startswith('__') and\
                                    not callable(getattr(self, attr)) else False
         namespace = list(filter(filter_func, dir(self)))
-        print(namespace)
-        values = [getattr(self, attr) for attr in namespace]
-        self.data_convert(namespace, values)
+        self.data_convert(namespace)
 
 
 class NameField(object):
