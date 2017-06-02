@@ -14,7 +14,6 @@ if __name__ == "__main__":
     p = Person()
     p.name = "Me"
     p.phone = "133 13 1331313"
-    print(p.birthday)
     p.save(prim_key='name') # All changes saved
     p.birthday = datetime.strptime("1011-12-13", "%Y-%m-%d")
     p.save(prim_key='name')
