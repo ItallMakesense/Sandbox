@@ -1,5 +1,6 @@
+#! /usr/bin/env python
+
 import requests
-import pprint as p
 
 
 def seeker(dictionary, wanted):
@@ -32,7 +33,8 @@ results_match = raw.json()[1]
 results_info = raw.json()[2]
 results_links = raw.json()[3]
 
-print("On a \"{}\" request found - {} - results:".format(search_request, len(results_match)))
+print("On a \"{}\" request found - {} - results:".format(\
+        search_request, len(results_match)))
 for result in results_match:
     print('', result)
 
@@ -46,8 +48,9 @@ if choice == 'y':
         wiki_results.append([r, i, l])
         print("\nFound: {}\nShort Info: {}\nLink: {}".format(r, i, l))
 
-article = input(
-    "Do you wish to specify wiki-request? (Press \"Enter\" if not, otherwise - type a word): ")
+text = "Do you wish to specify wiki-request?"
+text_options = "(Press \"Enter\" if not, otherwise - type a word)"
+article = input("%s %s: " % (text, text_options))
 
 article_params = {
     'action': 'query',

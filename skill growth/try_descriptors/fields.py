@@ -1,5 +1,7 @@
 """
-For descr_1.py.
+Simple, but demonstrative implementation of descriptors.
+
+See module usage in descr_1.py.
 """
 
 from datetime import datetime

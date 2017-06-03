@@ -1,5 +1,5 @@
 """
-Example for DocAPI usage.
+Example for doclib module usage.
 """
 
 from doclib import DocAPI
