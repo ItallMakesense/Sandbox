@@ -1,5 +1,5 @@
 """
-
+MyORM module usage example.
 """
 
 from myorm import Model, BirthdayField, NameField, PhoneField

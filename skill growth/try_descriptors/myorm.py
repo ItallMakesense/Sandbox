@@ -1,5 +1,8 @@
 """
-For descr_3.py.
+Simple ORM using data descriptors (Name-, Birthday- and PhoneField),
+which stores descriptor values in an SQLite database.
+
+See module usage in descr_3.py.
 """
 
 from datetime import datetime
