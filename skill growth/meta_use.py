@@ -44,7 +44,7 @@ class Meta(type):
     def __new__(mcs, name, bases, attrs, **kwargs):
         print('  Meta.__new__(mcs=%s, name=%r, bases=%s, attrs=[%s], kwargs=%s)\n'\
                 % (mcs, name, bases, ', '.join(attrs), kwargs))
-        if "Cache" in str(bases):
+        if "Cache" in globals():
             Cache.delay = kwargs
             for k in attrs:
                 if callable(attrs[k]) and k not in type.__dict__:
@@ -54,7 +54,7 @@ class Meta(type):
 class Cache(metaclass=Meta):
     """ Class `Cache` implemented as metaclass, that inherits `Meta`,
         written above.
-        
+
         `get_cache` implemented, as a wrapper for given user methods.
         It allows to save function result in `cached` class variable.
         It also initiates cashe "cleaner" - `delayed_purge` - as separate
