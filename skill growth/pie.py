@@ -94,3 +94,23 @@
 
 # if __name__ == "__main__":
 #     main()
+# 13.06.17 ####################################################################
+# def custom_sort(strings):
+#     """ Takes a list of strings containing integers and words
+#         and returns a sorted version of the list. The output
+#         maintain the positions of strings and numbers as they
+#         appeared in the original string. """
+#     words = iter(sorted(word for word in strings if word.isalpha()))
+#     numbers = iter(sorted(num for num in strings if not num.isalpha()))
+#     return " ".join(next(words) if string.isalpha() else next(numbers)\
+#             for string in strings)
+
+# strings = input("Enter objects row: ").split()
+# print(custom_sort(strings))
+# 00.00.0 ####################################################################
+def maxSequence(arr):
+    arr.sort()
+    return sum(num if num > 0)
+    # maxes.append(max(arr))
+
+print(maxSequence([-2, 1, -3, 4, -1, 2, 1, -5, 4]))
