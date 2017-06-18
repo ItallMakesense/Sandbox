@@ -3,28 +3,25 @@ import sys
 
 
 def create_socket():
-    """ Declares host name and port number,
-        and creates a socket server would be using """
+    """ Creates a socket that server would be using """
     try:
-        global host, port, skt
-        host = ""
-        port = 9999
         skt = socket.socket()
     except socket.error as err:
         print("Socket creation error:", err)
+    else:
+        return skt
 
-def bind_socket():
+def bind_socket(host, port, skt):
     """ Binds created socket to our host and port
         and receives client's attemt to connect """
     try:
-        global host, port, skt
         print("Binding socket to port:", port)
         skt.bind((host, port))
         skt.listen(5)
     except socket.error as err:
         print("Socket binding error:", err)
 
-def accept_socket():
+def accept_socket(skt):
     """ Opens connection to the received client
         and executes commands """
     connection, address = skt.accept()
@@ -51,11 +48,12 @@ def send_command(connection):
 
 def main():
     """ Main function for implementing remote shell
-        from the server side """
-    create_socket()
-    bind_socket()
-    accept_socket()
+        from the server side. Declares host name and port number """
+    host = ""
+    port = 9999
+    skt = create_socket()
+    bind_socket(host, port, skt)
+    accept_socket(skt)
 
 
-if __name__ == "__main__":
-    main()
+main()
