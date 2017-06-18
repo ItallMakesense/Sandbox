@@ -57,5 +57,4 @@ def main():
     accept_socket()
 
 
-if __name__ == "__main__":
-    main()
+main()
