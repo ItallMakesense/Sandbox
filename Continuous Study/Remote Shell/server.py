@@ -49,7 +49,7 @@ def send_command(connection):
 def main():
     """ Main function for implementing remote shell
         from the server side. Declares host name and port number """
-    host = ""
+    host = "localhost"
     port = 9999
     skt = create_socket()
     bind_socket(host, port, skt)

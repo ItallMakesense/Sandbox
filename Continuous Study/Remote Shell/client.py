@@ -3,7 +3,7 @@ import socket
 import subprocess
 
 
-host = "34.206.101.184"
+host = "localhost"
 port = 9999
 skt = socket.socket()
 skt.connect((host, port))
