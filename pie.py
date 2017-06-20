@@ -112,5 +112,3 @@ def maxSequence(arr):
     arr.sort()
     return sum(num if num > 0)
     # maxes.append(max(arr))
-
-print(maxSequence([-2, 1, -3, 4, -1, 2, 1, -5, 4]))
