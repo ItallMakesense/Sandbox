@@ -1,3 +1,6 @@
+"""
+
+"""
 from io import TextIOWrapper
 import os
 import socket
@@ -15,9 +18,6 @@ def write_file(path, data):
 
 def get_domain_name(url):
     return get_tld(url)
-
-# def get_ip_address(host):
-#     return socket.gethostbyname(host)
 
 def get_robots_txt(url):
     path = url if url.endswith('/') else url + '/'
