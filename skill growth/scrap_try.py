@@ -4,16 +4,17 @@ of the site.
 By default it's given that address:
  - http://www.petsonic.com/es/perros/snacks-y-huesos-perro -
 so afterwords the script seeks each product on this page,
-extracts it's name (different names for different products scales on the same page),
-it's price and images - and writes all this info into CSV file with this name:
+extracts it's name (different names for different products
+scales on the same page), it's price and images - and writes
+all this info into CSV file with this name:
  - petsonic.csv
 """
 import csv
-import requests
 import argparse
-from bs4 import BeautifulSoup
 import concurrent.futures as conf
-from itertools import repeat
+import requests
+from bs4 import BeautifulSoup
+
 
 
 def get_soup(link):
@@ -22,7 +23,8 @@ def get_soup(link):
 
 def get_link_to_all(soup):
     all_products = soup.find(attrs={'class':'showall pull-left'})
-    params = {i.get('name') : i.get('value') for i in all_products.find_all('input')}
+    params = {i.get('name') : i.get('value') for i in\
+                all_products.find_all('input')}
     return all_products.get('action'), params
 
 def get_rich_soup(refined_link):
@@ -44,7 +46,7 @@ def extract_data(soup):
     for i in soup.find_all(attrs={'class':'attribute_labels_lists'}):
         ending = i.find(attrs={'class':'attribute_name'}).text.strip()
         price = i.find(attrs={'class':'attribute_price'}).text.strip()
-        name = "{} - {}".format(prod_name, ending)
+        name = f"{prod_name} - {ending}"
         result.append((name, price, image))
     return result
 
@@ -53,7 +55,7 @@ def write_csv(data, file_name):
         writer = csv.writer(file)
         writer.writerows(data)
 
-def single_product_write(link_and_file):
+def product_etl(link_and_file):
     link, file = link_and_file
     response = requests.get(link)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -67,14 +69,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Site product scrapper")
     parser.add_argument('link', default=_link, nargs='?',\
-                        help="URL of target site (default isjust example: %s)"\
-                        % _link)
+                        help="URL of target site (default is just example: "\
+                                f"{_link})")
     parser.add_argument('file', default=_file_name, nargs='?',\
-                        help="Path to .csv output file (default is just example: %s)"\
-                        % _file_name)
+                        help="Path to .csv output file (default is just"\
+                                f"example: {_file_name})")
     args = parser.parse_args()
 
     links = get_all_links(get_rich_soup(get_link_to_all(get_soup(args.link))))
     
     executor = conf.ProcessPoolExecutor()
-    executor.map(single_product_write, zip(links, repeat(args.file, len(links))))
+    executor.map(product_etl, zip(links, [args.file]*len(links)))
