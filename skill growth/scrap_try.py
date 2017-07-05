@@ -12,6 +12,8 @@ import csv
 import requests
 import argparse
 from bs4 import BeautifulSoup
+import concurrent.futures as conf
+from itertools import repeat
 
 
 def get_soup(link):
@@ -51,6 +53,12 @@ def write_csv(data, file_name):
         writer = csv.writer(file)
         writer.writerows(data)
 
+def single_product_write(link_and_file):
+    link, file = link_and_file
+    response = requests.get(link)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    write_csv(extract_data(soup), file)
+
 
 if __name__ == "__main__":
 
@@ -66,7 +74,7 @@ if __name__ == "__main__":
                         % _file_name)
     args = parser.parse_args()
 
-    for link in get_all_links(get_rich_soup(get_link_to_all(get_soup(args.link)))):
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        write_csv(extract_data(soup), args.file)
+    links = get_all_links(get_rich_soup(get_link_to_all(get_soup(args.link))))
+    
+    executor = conf.ProcessPoolExecutor()
+    executor.map(single_product_write, zip(links, repeat(args.file, len(links))))
