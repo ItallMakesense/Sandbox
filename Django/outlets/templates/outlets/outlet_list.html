@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block head_title %} Outlets | {{block.super}} {% endblock %}
+
+{% block content %}
+<h1>Outlets list</h1>
+
+<ul>
+    {% for obj in object_list %}
+        <li> {{obj.name}} - {{obj.address}} - {{obj.category}} </li>
+    {% endfor %}
+</ul>
+{% endblock %}

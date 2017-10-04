@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang=en>
+    <head>
+        <title>
+            {% block head_title %} stuff.by {% endblock head_title %}
+        </title>
+        {% include 'snippets/css.html' %}
+    </head>
+    <body>
+        <div class='container'>
+            {% block content %}{% endblock content %}
+        </div>
+        {% include 'snippets/navigation.html' %}
+        {% include 'snippets/js.html' %}
+    </body>
+</html>

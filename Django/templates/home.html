@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block head_title %} Home | {{block.super}} {% endblock head_title %}
+
+{% block content %}
+
+{{ block.super }}
+
+<h1> {{header}} </h1>
+<p>
+    {% if header %}
+        {{overview}}
+    {% endif %}
+</p>
+{% endblock content %}

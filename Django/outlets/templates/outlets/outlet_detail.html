@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block head_title %} Outlets | {{block.super}} {% endblock %}
+
+{% block content %}
+    <h1> {{object.title}} <small>{{object.category}}</small> </h1>
+    <p> {{oblect.location}} </p>
+    <p> {{object.created}}, {{object.updated | timesince}} ago </p>
+{% endblock %}
