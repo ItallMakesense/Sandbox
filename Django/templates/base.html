@@ -8,9 +8,11 @@
     </head>
     <body>
         <div class='container'>
+            <h1> stuff.py </h1>
+            {% include 'snippets/navigation.html' %}
+            
             {% block content %}{% endblock content %}
         </div>
-        {% include 'snippets/navigation.html' %}
         {% include 'snippets/js.html' %}
     </body>
 </html>

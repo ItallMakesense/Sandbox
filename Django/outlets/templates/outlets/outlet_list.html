@@ -7,7 +7,10 @@
 
 <ul>
     {% for obj in object_list %}
-        <li> {{obj.name}} - {{obj.address}} - {{obj.category}} </li>
+        <li>
+            <a href='/outlets/{{obj.slug}}'>{{obj}}</a><br>
+            {{obj.category}} - {{obj.address}}
+        </li>
     {% endfor %}
 </ul>
 {% endblock %}

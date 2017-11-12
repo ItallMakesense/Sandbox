@@ -1,9 +1,11 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.views import View
-from django.views.generic import TemplateView, ListView, DetailView
+from django.views.generic import (TemplateView, ListView,
+    DetailView, CreateView)
 
 from .models import Outlet
+from .forms import OutletCreateForm
 
 
 class HomeView(TemplateView):
@@ -32,9 +34,30 @@ class OutletDetailView(DetailView):
 
     queryset = Outlet.objects.all()
 
-    def get_object(self, *a, **kw):
-        obj = get_object_or_404(Outlet, id=self.kwargs.get('id'))
-        return obj
+    # def get_object(self, *a, **kw):
+    #     obj = get_object_or_404(Outlet, id=self.kwargs.get('id'))
+    #     return obj
+
+class OutletCreateView(CreateView):
+
+    form_class = OutletCreateForm
+    template_name = 'outlets/form.html'
+    success_url = '/outlets/'
+
+# def outlet_create_view(request):
+#     template_name = 'outlets/form.html'
+#     form = OutletCreateForm(request.POST or None)
+#     if request.method == 'POST' and form.is_valid():
+#         # obj = Outlet.objects.create(
+#         #     name=form.cleaned_data.get('name'),
+#         #     address=form.cleaned_data.get('address'),
+#         #     category=form.cleaned_data.get('category')
+#         #     )
+#         form.save()
+#         return HttpResponseRedirect('/outlets/')
+#     errors = form.errors if form.errors else None
+#     context = {'form': form, 'errors': errors}
+#     return render(request, template_name, context)
 
 # class SearchOutletListView(OutletListView):
 #     def get_queryset(self):

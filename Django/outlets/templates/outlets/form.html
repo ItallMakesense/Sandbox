@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block head_title %} Add Outlet | {{block.super}} {% endblock %}
+
+{% block content %}
+<h1>Add Outlet</h1>
+
+{% if errors %} {{errors}} {% endif %}
+
+<form method='POST'> {% csrf_token %}
+    <!-- <input type='text' name='name' placeholder="Title"><br>
+    <input type='text' name='address' placeholder="Address"><br>
+    <input type='text' name='category' placeholder="Category"><br> -->
+    {{form.as_p}}
+    <button type='submit'> Save </button>
+</form>
+{% endblock %}
